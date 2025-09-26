@@ -46,53 +46,83 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
     }
   };
 
- const handleProfileNext = async () => {
-  setIsLoading(true);
-  try {
-    let avatarUrl = "";
+  const handleProfileNext = async () => {
+    setIsLoading(true);
+    try {
+      let avatarUrl = "";
 
-    if (avatarFile) {
-      const fileName = `${userId}-${Date.now()}.${avatarFile.name.split('.').pop()}`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, avatarFile);
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        // Continue without avatar instead of failing
-      } else {
-        const { data: { publicUrl } } = supabase.storage
+      if (avatarFile) {
+        const fileName = `${userId}-${Date.now()}.${avatarFile.name.split('.').pop()}`;
+        const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .getPublicUrl(fileName);
-        avatarUrl = publicUrl;
+          .upload(fileName, avatarFile);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          // Continue without avatar instead of failing
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          avatarUrl = publicUrl;
+        }
       }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: name,
+          avatar_url: avatarUrl || null
+        })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
+
+      setCurrentStep(3);
+    } catch (error) {
+      console.error('Full error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        username: name,
-        avatar_url: avatarUrl || null
-      })
-      .eq('user_id', userId);
+  const handleSkipProfilePic = async () => {
+    setIsLoading(true);
+    try {
+      // Update profile with just the name, no avatar
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: name,
+          avatar_url: null
+        })
+        .eq('user_id', userId);
 
-    if (error) {
-      console.error('Profile update error:', error);
-      throw error;
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
+
+      setCurrentStep(3);
+    } catch (error) {
+      console.error('Skip profile error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setCurrentStep(3);
-  } catch (error) {
-    console.error('Full error:', error);
-    toast({
-      title: "Error",
-      description: "Failed to update profile. Please try again.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleFingerprintSetup = async () => {
     setIsLoading(true);
@@ -126,17 +156,17 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         localStorage.setItem('fingerprintUserId', userId);
 
         toast({
-  title: "Success!",
-  description: "Fingerprint authentication has been set up",
-});
+          title: "Success!",
+          description: "Fingerprint authentication has been set up",
+        });
 
-// Mark onboarding as completed
-await supabase
-  .from('profiles')
-  .update({ onboarding_completed: true })
-  .eq('user_id', userId);
+        // Mark onboarding as completed
+        await supabase
+          .from('profiles')
+          .update({ onboarding_completed: true })
+          .eq('user_id', userId);
 
-onComplete();
+        onComplete();
       }
     } catch (error) {
       toast({
@@ -150,14 +180,14 @@ onComplete();
   };
 
   const handleSkipFingerprint = async () => {
-  // Mark onboarding as completed
-  await supabase
-    .from('profiles')
-    .update({ onboarding_completed: true })
-    .eq('user_id', userId);
+    // Mark onboarding as completed
+    await supabase
+      .from('profiles')
+      .update({ onboarding_completed: true })
+      .eq('user_id', userId);
     
-  onComplete();
-};
+    onComplete();
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
@@ -239,31 +269,31 @@ onComplete();
                 </label>
               </div>
               
-        <div className="space-y-3">
-  <div className="flex space-x-3">
-    <AnimatedButton
-      variant="outline"
-      onClick={() => setCurrentStep(1)}
-      className="flex-1"
-    >
-      Back
-    </AnimatedButton>
-    <AnimatedButton
-      onClick={handleProfileNext}
-      isLoading={isLoading}
-      className="flex-1"
-    >
-      Next
-    </AnimatedButton>
-  </div>
-  <AnimatedButton
-    variant="ghost"
-    onClick={handleProfileNext}
-    className="w-full"
-  >
-    Skip Profile Picture
-  </AnimatedButton>
-</div>
+              <div className="space-y-3">
+                <div className="flex space-x-3">
+                  <AnimatedButton
+                    variant="outline"
+                    onClick={() => setCurrentStep(1)}
+                    className="flex-1"
+                  >
+                    Back
+                  </AnimatedButton>
+                  <AnimatedButton
+                    onClick={handleProfileNext}
+                    isLoading={isLoading}
+                    className="flex-1"
+                  >
+                    Next
+                  </AnimatedButton>
+                </div>
+                <AnimatedButton
+                  variant="ghost"
+                  onClick={handleSkipProfilePic}
+                  className="w-full"
+                >
+                  Skip Profile Picture
+                </AnimatedButton>
+              </div>
             </motion.div>
           )}
 
@@ -301,4 +331,4 @@ onComplete();
       </Card>
     </div>
   );
-}
+        }
