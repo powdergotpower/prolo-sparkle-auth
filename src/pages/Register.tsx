@@ -66,29 +66,43 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
+      // 1️⃣ Sign up user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            username,
-          },
-        },
+        options: { data: { username } },
       });
 
-      if (error) {
+      if (authError) {
         toast({
           title: "Registration Failed",
-          description: error.message,
+          description: authError.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Registration Successful!",
-          description: "Welcome to the platform! Please check your email to verify your account.",
-        });
-        navigate("/login");
+        return;
       }
+
+      // 2️⃣ Insert into your 'users' table
+      const { error: dbError } = await supabase
+        .from("users")
+        .insert([{ id: authData.user?.id, email, username }]);
+
+      if (dbError) {
+        toast({
+          title: "Database Error",
+          description: dbError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 3️⃣ Success
+      toast({
+        title: "Registration Successful!",
+        description: "Welcome! Please check your email to verify your account.",
+      });
+
+      navigate("/login");
     } catch (error) {
       toast({
         title: "Error",
@@ -197,4 +211,4 @@ export default function Register() {
       </form>
     </AuthLayout>
   );
-}
+                    }
