@@ -53,7 +53,33 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // 1️⃣ Sign up user in Supabase Auth
+      // 1️⃣ Check if email or username already exists
+      const { data: existingUsers } = await supabase
+        .from("profiles")
+        .select("email, username")
+        .or(`email.eq.${email},username.eq.${username}`);
+
+      if (existingUsers && existingUsers.length > 0) {
+        const existingUser = existingUsers[0];
+        if (existingUser.email === email) {
+          toast({
+            title: "Registration Failed",
+            description: "This email is already registered",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (existingUser.username === username) {
+          toast({
+            title: "Registration Failed", 
+            description: "This username is already taken",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // 2️⃣ Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -61,6 +87,7 @@ export default function Register() {
       });
 
       if (authError) {
+        console.error('Auth Error:', authError);
         toast({
           title: "Registration Failed",
           description: authError.message,
@@ -69,11 +96,20 @@ export default function Register() {
         return;
       }
 
-      // 2️⃣ Insert into 'profiles' table instead of 'users'
+      if (!authData.user) {
+        toast({
+          title: "Registration Failed",
+          description: "Failed to create user account",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 3️⃣ Insert into 'profiles' table
       const { error: profileError } = await supabase
         .from("profiles")
         .insert([{
-          user_id: authData.user?.id, // link to Auth user
+          user_id: authData.user.id,
           username,
           email,
           charms: 0,
@@ -81,15 +117,33 @@ export default function Register() {
         }]);
 
       if (profileError) {
+        console.error('Profile Error Details:', profileError);
+        
+        let errorMessage = "Database error occurred";
+        
+        if (profileError.code === '23505') { // Unique constraint violation
+          if (profileError.message.includes('profiles_email_key')) {
+            errorMessage = "This email is already registered";
+          } else if (profileError.message.includes('profiles_username_key')) {
+            errorMessage = "This username is already taken";
+          } else if (profileError.message.includes('profiles_user_id_key')) {
+            errorMessage = "User profile already exists";
+          } else {
+            errorMessage = "A user with this information already exists";
+          }
+        } else {
+          errorMessage = `Database error: ${profileError.message}`;
+        }
+        
         toast({
-          title: "Database Error",
-          description: profileError.message,
+          title: "Registration Failed",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
       }
 
-      // 3️⃣ Success
+      // 4️⃣ Success
       toast({
         title: "Registration Successful!",
         description: "Welcome! Please check your email to verify your account.",
@@ -97,9 +151,10 @@ export default function Register() {
 
       navigate("/login");
     } catch (error) {
+      console.error('Unexpected error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -111,29 +166,65 @@ export default function Register() {
     <AuthLayout title="Create Account" subtitle="Join our community today">
       <form onSubmit={handleRegister} className="space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-          <AnimatedInput id="username" label="Username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} error={errors.username} placeholder="Choose a username" />
+          <AnimatedInput 
+            id="username" 
+            label="Username" 
+            type="text" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            error={errors.username} 
+            placeholder="Choose a username" 
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-          <AnimatedInput id="email" label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} placeholder="Enter your email" />
+          <AnimatedInput 
+            id="email" 
+            label="Email" 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            error={errors.email} 
+            placeholder="Enter your email" 
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
-          <AnimatedInput id="password" label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} placeholder="Create a password" />
+          <AnimatedInput 
+            id="password" 
+            label="Password" 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            error={errors.password} 
+            placeholder="Create a password" 
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }}>
-          <AnimatedInput id="confirmPassword" label="Confirm Password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} error={errors.confirmPassword} placeholder="Confirm your password" />
+          <AnimatedInput 
+            id="confirmPassword" 
+            label="Confirm Password" 
+            type="password" 
+            value={confirmPassword} 
+            onChange={(e) => setConfirmPassword(e.target.value)} 
+            error={errors.confirmPassword} 
+            placeholder="Confirm your password" 
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }} className="space-y-4">
-          <AnimatedButton type="submit" className="w-full" isLoading={isLoading}>Create Account</AnimatedButton>
+          <AnimatedButton type="submit" className="w-full" isLoading={isLoading}>
+            Create Account
+          </AnimatedButton>
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Already have an account? </span>
-            <Link to="/login" className="text-primary hover:text-primary-glow transition-colors">Sign In</Link>
+            <Link to="/login" className="text-primary hover:text-primary-glow transition-colors">
+              Sign In
+            </Link>
           </div>
         </motion.div>
       </form>
     </AuthLayout>
   );
-}
+          }
