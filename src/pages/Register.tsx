@@ -60,7 +60,7 @@ export default function Register() {
         .from("profiles")
         .select("email")
         .eq("email", email)
-        .single();
+        .maybeSingle();
 
       if (existingEmailUser) {
         toast({
@@ -77,7 +77,7 @@ export default function Register() {
         .from("profiles")
         .select("username")
         .eq("username", username)
-        .single();
+        .maybeSingle();
 
       if (existingUsernameUser) {
         toast({
@@ -89,11 +89,14 @@ export default function Register() {
         return;
       }
 
-      // 3️⃣ NOW create the auth user
+      // 3️⃣ Create the auth user (profile will be created automatically by trigger)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username } },
+        options: { 
+          data: { username },
+          emailRedirectTo: `${window.location.origin}/`
+        },
       });
 
       if (authError) {
@@ -115,49 +118,9 @@ export default function Register() {
         return;
       }
 
-      console.log('✅ Auth successful, creating profile...');
+      console.log('✅ Registration successful! Profile created automatically by database trigger.');
 
-      // 4️⃣ Insert into 'profiles' table
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert([{
-          user_id: authData.user.id,
-          username,
-          email,
-          charms: 0,
-          level: 1
-        }]);
-
-      if (profileError) {
-        console.error('Profile Error Details:', profileError);
-
-        let errorMessage = "Database error occurred";
-
-        if (profileError.code === '23505') { // Unique constraint violation
-          if (profileError.message.includes('profiles_email_key')) {
-            errorMessage = "This email is already registered";
-          } else if (profileError.message.includes('profiles_username_key')) {
-            errorMessage = "This username is already taken";
-          } else if (profileError.message.includes('profiles_user_id_key')) {
-            errorMessage = "User profile already exists";
-          } else {
-            errorMessage = "A user with this information already exists";
-          }
-        } else {
-          errorMessage = `Database error: ${profileError.message}`;
-        }
-
-        toast({
-          title: "Registration Failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('🎉 Registration successful!');
-
-      // 5️⃣ Success
+      // 4️⃣ Success
       toast({
         title: "Registration Successful!",
         description: "Welcome! Please check your email to verify your account.",
