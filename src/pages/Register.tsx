@@ -55,7 +55,41 @@ export default function Register() {
     try {
       console.log('🚀 Starting registration for:', email);
 
-      // 1️⃣ Sign up user in Supabase Auth
+      // 1️⃣ CHECK if email already exists in profiles table
+      const { data: existingEmailUser } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("email", email)
+        .single();
+
+      if (existingEmailUser) {
+        toast({
+          title: "Registration Failed",
+          description: "This email is already registered",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // 2️⃣ CHECK if username already exists in profiles table
+      const { data: existingUsernameUser } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .single();
+
+      if (existingUsernameUser) {
+        toast({
+          title: "Registration Failed",
+          description: "This username is already taken",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // 3️⃣ NOW create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -83,7 +117,7 @@ export default function Register() {
 
       console.log('✅ Auth successful, creating profile...');
 
-      // 2️⃣ Insert into 'profiles' table
+      // 4️⃣ Insert into 'profiles' table
       const { error: profileError } = await supabase
         .from("profiles")
         .insert([{
@@ -123,7 +157,7 @@ export default function Register() {
 
       console.log('🎉 Registration successful!');
 
-      // 3️⃣ Success
+      // 5️⃣ Success
       toast({
         title: "Registration Successful!",
         description: "Welcome! Please check your email to verify your account.",
@@ -231,4 +265,4 @@ export default function Register() {
       </form>
     </AuthLayout>
   );
-      }
+          }
