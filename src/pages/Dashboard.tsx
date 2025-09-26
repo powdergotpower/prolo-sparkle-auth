@@ -27,8 +27,8 @@ export default function Dashboard() {
           .eq('user_id', user.id)
           .maybeSingle();
         
-        if (!profile?.username) {
-          setNeedsOnboarding(true);
+        if (!profile?.onboarding_completed) {
+  setNeedsOnboarding(true);
         }
         
         setUser(user);
