@@ -9,22 +9,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ emailOrUsername?: string; password?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { emailOrUsername?: string; password?: string } = {};
     
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid";
+    if (!emailOrUsername) {
+      newErrors.emailOrUsername = "Email or username is required";
     }
     
     if (!password) {
@@ -45,8 +43,32 @@ export default function Login() {
     setIsLoading(true);
     
     try {
+      let loginEmail = emailOrUsername;
+      
+      // Check if input is username (not email format)
+      if (!emailOrUsername.includes('@')) {
+        // Look up email by username
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("username", emailOrUsername)
+          .maybeSingle();
+          
+        if (profileError || !profile) {
+          toast({
+            title: "Login Failed",
+            description: "Username not found",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        loginEmail = profile.email;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
       });
 
@@ -125,13 +147,13 @@ export default function Login() {
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           <AnimatedInput
-            id="email"
+            id="emailOrUsername"
             label="Email or Username"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={errors.email}
-            placeholder="Enter your email"
+            type="text"
+            value={emailOrUsername}
+            onChange={(e) => setEmailOrUsername(e.target.value)}
+            error={errors.emailOrUsername}
+            placeholder="Enter your email or username"
           />
         </motion.div>
 
