@@ -46,47 +46,53 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
     }
   };
 
-  const handleProfileNext = async () => {
-    setIsLoading(true);
-    try {
-      let avatarUrl = "";
-      
-      if (avatarFile) {
-        const fileName = `${userId}-${Date.now()}.${avatarFile.name.split('.').pop()}`;
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, avatarFile);
+ const handleProfileNext = async () => {
+  setIsLoading(true);
+  try {
+    let avatarUrl = "";
 
-        if (uploadError) throw uploadError;
+    if (avatarFile) {
+      const fileName = `${userId}-${Date.now()}.${avatarFile.name.split('.').pop()}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile);
 
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        // Continue without avatar instead of failing
+      } else {
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
           .getPublicUrl(fileName);
-        
         avatarUrl = publicUrl;
       }
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: name,
-          avatar_url: avatarUrl
-        })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      setCurrentStep(3);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        username: name,
+        avatar_url: avatarUrl || null
+      })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Profile update error:', error);
+      throw error;
+    }
+
+    setCurrentStep(3);
+  } catch (error) {
+    console.error('Full error:', error);
+    toast({
+      title: "Error",
+      description: "Failed to update profile. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleFingerprintSetup = async () => {
     setIsLoading(true);
