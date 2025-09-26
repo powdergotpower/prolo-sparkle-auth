@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AnimatedButton } from "@/components/auth/AnimatedButton";
 import { useToast } from "@/hooks/use-toast";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { User } from "@supabase/supabase-js";
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -18,6 +20,17 @@ export default function Dashboard() {
       if (!user) {
         navigate("/login");
       } else {
+        // Check if user needs onboarding
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!profile?.username) {
+          setNeedsOnboarding(true);
+        }
+        
         setUser(user);
       }
       setIsLoading(false);
@@ -60,6 +73,15 @@ export default function Dashboard() {
           className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
         />
       </div>
+    );
+  }
+
+  if (needsOnboarding && user) {
+    return (
+      <OnboardingFlow 
+        userId={user.id}
+        onComplete={() => setNeedsOnboarding(false)}
+      />
     );
   }
 

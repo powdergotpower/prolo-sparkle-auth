@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { AnimatedInput } from "@/components/auth/AnimatedInput";
 import { AnimatedButton } from "@/components/auth/AnimatedButton";
+import { FingerprintLogin } from "@/components/auth/FingerprintLogin";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -14,9 +15,18 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
+  const [showFingerprint, setShowFingerprint] = useState(false);
   const [errors, setErrors] = useState<{ emailOrUsername?: string; password?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if fingerprint is enabled
+    const fingerprintEnabled = localStorage.getItem('fingerprintEnabled');
+    if (fingerprintEnabled === 'true') {
+      setShowFingerprint(true);
+    }
+  }, []);
 
   const validateForm = () => {
     const newErrors: { emailOrUsername?: string; password?: string } = {};
@@ -134,6 +144,20 @@ export default function Login() {
       setIsResetLoading(false);
     }
   };
+
+  if (showFingerprint) {
+    return (
+      <AuthLayout 
+        title="Welcome Back" 
+        subtitle="Sign in to your account to continue"
+      >
+        <FingerprintLogin 
+          onSuccess={() => navigate("/dashboard")}
+          onFallback={() => setShowFingerprint(false)}
+        />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout 

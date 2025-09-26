@@ -20,6 +20,7 @@ export type Database = {
           charms: number
           created_at: string
           email: string
+          fingerprint_enabled: boolean | null
           id: string
           level: number
           updated_at: string
@@ -31,6 +32,7 @@ export type Database = {
           charms?: number
           created_at?: string
           email: string
+          fingerprint_enabled?: boolean | null
           id?: string
           level?: number
           updated_at?: string
@@ -42,6 +44,7 @@ export type Database = {
           charms?: number
           created_at?: string
           email?: string
+          fingerprint_enabled?: boolean | null
           id?: string
           level?: number
           updated_at?: string

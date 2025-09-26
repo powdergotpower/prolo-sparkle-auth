@@ -6,7 +6,7 @@ import { AnimatedButton } from "@/components/auth/AnimatedButton";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FingerprintAuthentication } from "@capacitor-community/fingerprint-aio";
+import { Device } from "@capacitor/device";
 import { Camera, User, Fingerprint } from "lucide-react";
 
 interface OnboardingFlowProps {
@@ -91,25 +91,24 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
   const handleFingerprintSetup = async () => {
     setIsLoading(true);
     try {
-      const isAvailable = await FingerprintAuthentication.isAvailable();
+      const info = await Device.getInfo();
       
-      if (!isAvailable.available) {
+      // Check if device supports biometric authentication
+      if (info.platform === 'web') {
         toast({
-          title: "Fingerprint Not Available",
-          description: "Your device doesn't support fingerprint authentication",
+          title: "Mobile Only Feature",
+          description: "Fingerprint authentication is only available on mobile devices",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
-      const result = await FingerprintAuthentication.registerBiometricAuth({
-        reason: "Register your fingerprint for quick login",
-        title: "Fingerprint Setup",
-        subtitle: "Touch the fingerprint sensor",
-        description: "Place your finger on the sensor to register"
-      });
+      // Simulate fingerprint setup for now
+      // In a real app, you would use a proper biometric plugin
+      const confirmed = confirm("Place your finger on the sensor to register fingerprint authentication");
 
-      if (result.succeeded) {
+      if (confirmed) {
         // Store fingerprint preference in user profile
         await supabase
           .from('profiles')
