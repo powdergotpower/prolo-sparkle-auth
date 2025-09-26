@@ -46,38 +46,7 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
-    try {
-      // 1️⃣ Check if email or username already exists
-      const { data: existingUsers } = await supabase
-        .from("profiles")
-        .select("email, username")
-        .or(`email.eq.${email},username.eq.${username}`);
-
-      if (existingUsers && existingUsers.length > 0) {
-        const existingUser = existingUsers[0];
-        if (existingUser.email === email) {
-          toast({
-            title: "Registration Failed",
-            description: "This email is already registered",
-            variant: "destructive",
-          });
-          return;
-        }
-        if (existingUser.username === username) {
-          toast({
-            title: "Registration Failed", 
-            description: "This username is already taken",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
+  
 
       // 2️⃣ Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -115,7 +84,86 @@ export default function Register() {
           charms: 0,
           level: 1
         }]);
+const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
+  setIsLoading(true);
+
+  try {
+    console.log('🚀 Starting registration for:', email);
+
+    // REMOVED THE PROBLEMATIC PRE-CHECK COMPLETELY
+    
+    // 1️⃣ Sign up user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username } },
+    });
+
+    if (authError) {
+      console.error('Auth Error:', authError);
+      toast({
+        title: "Registration Failed",
+        description: authError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!authData.user) {
+      toast({
+        title: "Registration Failed",
+        description: "Failed to create user account",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ Auth successful, creating profile...');
+
+    // 2️⃣ Insert into 'profiles' table
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert([{
+        user_id: authData.user.id,
+        username,
+        email,
+        charms: 0,
+        level: 1
+      }]);
+
+    if (profileError) {
+      console.error('Profile Error:', profileError);
+      toast({
+        title: "Registration Failed",
+        description: profileError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('🎉 Registration successful!');
+
+    // 3️⃣ Success
+    toast({
+      title: "Registration Successful!",
+      description: "Welcome! Please check your email to verify your account.",
+    });
+
+    navigate("/login");
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    toast({
+      title: "Error",
+      description: "An unexpected error occurred. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
       if (profileError) {
         console.error('Profile Error Details:', profileError);
         
