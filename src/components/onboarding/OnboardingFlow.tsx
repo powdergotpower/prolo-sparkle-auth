@@ -120,11 +120,17 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         localStorage.setItem('fingerprintUserId', userId);
 
         toast({
-          title: "Success!",
-          description: "Fingerprint authentication has been set up",
-        });
-        
-        onComplete();
+  title: "Success!",
+  description: "Fingerprint authentication has been set up",
+});
+
+// Mark onboarding as completed
+await supabase
+  .from('profiles')
+  .update({ onboarding_completed: true })
+  .eq('user_id', userId);
+
+onComplete();
       }
     } catch (error) {
       toast({
