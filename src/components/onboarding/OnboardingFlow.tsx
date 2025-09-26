@@ -233,22 +233,31 @@ onComplete();
                 </label>
               </div>
               
-              <div className="flex space-x-3">
-                <AnimatedButton
-                  variant="outline"
-                  onClick={() => setCurrentStep(1)}
-                  className="flex-1"
-                >
-                  Back
-                </AnimatedButton>
-                <AnimatedButton
-                  onClick={handleProfileNext}
-                  isLoading={isLoading}
-                  className="flex-1"
-                >
-                  Next
-                </AnimatedButton>
-              </div>
+        <div className="space-y-3">
+  <div className="flex space-x-3">
+    <AnimatedButton
+      variant="outline"
+      onClick={() => setCurrentStep(1)}
+      className="flex-1"
+    >
+      Back
+    </AnimatedButton>
+    <AnimatedButton
+      onClick={handleProfileNext}
+      isLoading={isLoading}
+      className="flex-1"
+    >
+      Next
+    </AnimatedButton>
+  </div>
+  <AnimatedButton
+    variant="ghost"
+    onClick={handleProfileNext}
+    className="w-full"
+  >
+    Skip Profile Picture
+  </AnimatedButton>
+</div>
             </motion.div>
           )}
 
