@@ -46,9 +46,16 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-      // 2️⃣ Sign up user in Supabase Auth
+    setIsLoading(true);
+
+    try {
+      console.log('🚀 Starting registration for:', email);
+
+      // 1️⃣ Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -74,7 +81,9 @@ export default function Register() {
         return;
       }
 
-      // 3️⃣ Insert into 'profiles' table
+      console.log('✅ Auth successful, creating profile...');
+
+      // 2️⃣ Insert into 'profiles' table
       const { error: profileError } = await supabase
         .from("profiles")
         .insert([{
@@ -84,91 +93,12 @@ export default function Register() {
           charms: 0,
           level: 1
         }]);
-const handleRegister = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!validateForm()) return;
 
-  setIsLoading(true);
-
-  try {
-    console.log('🚀 Starting registration for:', email);
-
-    // REMOVED THE PROBLEMATIC PRE-CHECK COMPLETELY
-    
-    // 1️⃣ Sign up user in Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { username } },
-    });
-
-    if (authError) {
-      console.error('Auth Error:', authError);
-      toast({
-        title: "Registration Failed",
-        description: authError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!authData.user) {
-      toast({
-        title: "Registration Failed",
-        description: "Failed to create user account",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('✅ Auth successful, creating profile...');
-
-    // 2️⃣ Insert into 'profiles' table
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert([{
-        user_id: authData.user.id,
-        username,
-        email,
-        charms: 0,
-        level: 1
-      }]);
-
-    if (profileError) {
-      console.error('Profile Error:', profileError);
-      toast({
-        title: "Registration Failed",
-        description: profileError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('🎉 Registration successful!');
-
-    // 3️⃣ Success
-    toast({
-      title: "Registration Successful!",
-      description: "Welcome! Please check your email to verify your account.",
-    });
-
-    navigate("/login");
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    toast({
-      title: "Error",
-      description: "An unexpected error occurred. Please try again.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
       if (profileError) {
         console.error('Profile Error Details:', profileError);
-        
+
         let errorMessage = "Database error occurred";
-        
+
         if (profileError.code === '23505') { // Unique constraint violation
           if (profileError.message.includes('profiles_email_key')) {
             errorMessage = "This email is already registered";
@@ -182,7 +112,7 @@ const handleRegister = async (e: React.FormEvent) => {
         } else {
           errorMessage = `Database error: ${profileError.message}`;
         }
-        
+
         toast({
           title: "Registration Failed",
           description: errorMessage,
@@ -191,7 +121,9 @@ const handleRegister = async (e: React.FormEvent) => {
         return;
       }
 
-      // 4️⃣ Success
+      console.log('🎉 Registration successful!');
+
+      // 3️⃣ Success
       toast({
         title: "Registration Successful!",
         description: "Welcome! Please check your email to verify your account.",
@@ -213,61 +145,85 @@ const handleRegister = async (e: React.FormEvent) => {
   return (
     <AuthLayout title="Create Account" subtitle="Join our community today">
       <form onSubmit={handleRegister} className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-          <AnimatedInput 
-            id="username" 
-            label="Username" 
-            type="text" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            error={errors.username} 
-            placeholder="Choose a username" 
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <AnimatedInput
+            id="username"
+            label="Username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            error={errors.username}
+            placeholder="Choose a username"
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-          <AnimatedInput 
-            id="email" 
-            label="Email" 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            error={errors.email} 
-            placeholder="Enter your email" 
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <AnimatedInput
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={errors.email}
+            placeholder="Enter your email"
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
-          <AnimatedInput 
-            id="password" 
-            label="Password" 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            error={errors.password} 
-            placeholder="Create a password" 
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <AnimatedInput
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={errors.password}
+            placeholder="Create a password"
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }}>
-          <AnimatedInput 
-            id="confirmPassword" 
-            label="Confirm Password" 
-            type="password" 
-            value={confirmPassword} 
-            onChange={(e) => setConfirmPassword(e.target.value)} 
-            error={errors.confirmPassword} 
-            placeholder="Confirm your password" 
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.4 }}
+        >
+          <AnimatedInput
+            id="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={errors.confirmPassword}
+            placeholder="Confirm your password"
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }} className="space-y-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.5 }} 
+          className="space-y-4"
+        >
           <AnimatedButton type="submit" className="w-full" isLoading={isLoading}>
             Create Account
           </AnimatedButton>
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Already have an account? </span>
-            <Link to="/login" className="text-primary hover:text-primary-glow transition-colors">
+            <Link 
+              to="/login" 
+              className="text-primary hover:text-primary-glow transition-colors"
+            >
               Sign In
             </Link>
           </div>
@@ -275,4 +231,4 @@ const handleRegister = async (e: React.FormEvent) => {
       </form>
     </AuthLayout>
   );
-          }
+      }
