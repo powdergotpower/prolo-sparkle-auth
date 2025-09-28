@@ -68,17 +68,50 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         }
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: name,
-          avatar_url: avatarUrl || null
-        } as any)
-        .eq('user_id', userId);
+      // Ensure user is authenticated and matches the provided userId
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        toast({
+          title: "Not signed in",
+          description: "Please sign in again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      if (error) {
-        console.error('Profile update error:', error);
-        throw error;
+      // Check if profile exists for this user; insert if missing (email is required)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      let dbError: any = null;
+
+      if (existingProfile) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            username: name,
+            avatar_url: avatarUrl || null
+          } as any)
+          .eq('user_id', userId);
+        dbError = error;
+      } else {
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: userId,
+            username: name,
+            avatar_url: avatarUrl || null,
+            email: user.email
+          } as any);
+        dbError = error;
+      }
+
+      if (dbError) {
+        console.error('Profile save error:', dbError);
+        throw dbError;
       }
 
       setCurrentStep(3);
@@ -97,18 +130,50 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
   const handleSkipProfilePic = async () => {
     setIsLoading(true);
     try {
-      // Update profile with just the name, no avatar
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: name,
-          avatar_url: null
-        } as any)
-        .eq('user_id', userId);
+      // Ensure user is authenticated and matches the provided userId
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        toast({
+          title: "Not signed in",
+          description: "Please sign in again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      if (error) {
-        console.error('Profile update error:', error);
-        throw error;
+      // Ensure a profile exists; if not, insert one (email required)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      let dbError: any = null;
+
+      if (existingProfile) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            username: name,
+            avatar_url: null
+          } as any)
+          .eq('user_id', userId);
+        dbError = error;
+      } else {
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: userId,
+            username: name,
+            avatar_url: null,
+            email: user.email
+          } as any);
+        dbError = error;
+      }
+
+      if (dbError) {
+        console.error('Profile save error:', dbError);
+        throw dbError;
       }
 
       setCurrentStep(3);
