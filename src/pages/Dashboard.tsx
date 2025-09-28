@@ -23,12 +23,12 @@ export default function Dashboard() {
         // Check if user needs onboarding
         const { data: profile } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('username, avatar_url, onboarding_completed')
           .eq('user_id', user.id)
           .maybeSingle();
         
         if (!profile?.onboarding_completed) {
-  setNeedsOnboarding(true);
+          setNeedsOnboarding(true);
         }
         
         setUser(user);

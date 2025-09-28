@@ -14,42 +14,276 @@ export type Database = {
   }
   public: {
     Tables: {
+      charms_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charms_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          read_at: string | null
+          receiver_id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          read_at?: string | null
+          receiver_id: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          read_at?: string | null
+          receiver_id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           charms: number
+          charms_total: number | null
           created_at: string
           email: string
           fingerprint_enabled: boolean | null
           id: string
+          last_active_at: string | null
           level: number
+          onboarding_completed: boolean | null
           updated_at: string
           user_id: string
-          username: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           charms?: number
+          charms_total?: number | null
           created_at?: string
           email: string
           fingerprint_enabled?: boolean | null
           id?: string
+          last_active_at?: string | null
           level?: number
+          onboarding_completed?: boolean | null
           updated_at?: string
           user_id: string
-          username: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           charms?: number
+          charms_total?: number | null
           created_at?: string
           email?: string
           fingerprint_enabled?: boolean | null
           id?: string
+          last_active_at?: string | null
           level?: number
+          onboarding_completed?: boolean | null
           updated_at?: string
           user_id?: string
-          username?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      ranking_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          period_start: string
+          period_type: string
+          rankings: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period_start: string
+          period_type: string
+          rankings: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period_start?: string
+          period_type?: string
+          rankings?: Json
+        }
+        Relationships: []
+      }
+      room_members: {
+        Row: {
+          id: string
+          is_active: boolean
+          joined_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          active_members: number
+          code: string
+          created_at: string
+          creator_id: string
+          id: string
+          is_public: boolean
+          last_activity: string | null
+          max_members: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active_members?: number
+          code: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          is_public?: boolean
+          last_activity?: string | null
+          max_members?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active_members?: number
+          code?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          is_public?: boolean
+          last_activity?: string | null
+          max_members?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_connections: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -58,7 +292,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_room_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

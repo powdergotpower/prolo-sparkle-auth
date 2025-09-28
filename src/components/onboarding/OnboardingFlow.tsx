@@ -73,7 +73,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         .update({
           username: name,
           avatar_url: avatarUrl || null
-        })
+        } as any)
         .eq('user_id', userId);
 
       if (error) {
@@ -103,7 +103,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         .update({
           username: name,
           avatar_url: null
-        })
+        } as any)
         .eq('user_id', userId);
 
       if (error) {
@@ -148,7 +148,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         // Store fingerprint preference in user profile
         await supabase
           .from('profiles')
-          .update({ fingerprint_enabled: true })
+          .update({ fingerprint_enabled: true } as any)
           .eq('user_id', userId);
 
         // Store in localStorage for quick access
@@ -163,7 +163,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         // Mark onboarding as completed
         await supabase
           .from('profiles')
-          .update({ onboarding_completed: true })
+          .update({ onboarding_completed: true } as any)
           .eq('user_id', userId);
 
         onComplete();
@@ -183,7 +183,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
     // Mark onboarding as completed
     await supabase
       .from('profiles')
-      .update({ onboarding_completed: true })
+      .update({ onboarding_completed: true } as any)
       .eq('user_id', userId);
     
     onComplete();
