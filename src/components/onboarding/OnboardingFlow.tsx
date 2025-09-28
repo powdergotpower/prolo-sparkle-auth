@@ -104,7 +104,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
             user_id: userId,
             username: name,
             avatar_url: avatarUrl || null,
-            email: user.email
+            email: user.email ?? `${userId}@placeholder.local`
           } as any);
         dbError = error;
       }
@@ -117,9 +117,10 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
       setCurrentStep(3);
     } catch (error) {
       console.error('Full error:', error);
+      const err = error as any;
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: `Failed to update profile: ${err?.message ?? 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
@@ -166,7 +167,7 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
             user_id: userId,
             username: name,
             avatar_url: null,
-            email: user.email
+            email: user.email ?? `${userId}@placeholder.local`
           } as any);
         dbError = error;
       }
@@ -179,9 +180,10 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
       setCurrentStep(3);
     } catch (error) {
       console.error('Skip profile error:', error);
+      const err = error as any;
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: `Failed to update profile: ${err?.message ?? 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
