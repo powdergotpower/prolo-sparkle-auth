@@ -88,6 +88,28 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
 
       let dbError: any = null;
 
+      // Check if username is taken by another user
+      const { data: usernameOwner, error: usernameCheckError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('username', name)
+        .not('user_id', 'eq', userId)
+        .maybeSingle();
+
+      if (usernameCheckError) {
+        console.warn('Username check error:', usernameCheckError);
+      }
+
+      if (usernameOwner) {
+        toast({
+          title: "Name already taken",
+          description: "Please choose a different name.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       if (existingProfile) {
         const { error } = await supabase
           .from('profiles')
@@ -150,6 +172,28 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
         .maybeSingle();
 
       let dbError: any = null;
+
+      // Check if username is taken by another user
+      const { data: usernameOwner, error: usernameCheckError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('username', name)
+        .not('user_id', 'eq', userId)
+        .maybeSingle();
+
+      if (usernameCheckError) {
+        console.warn('Username check error:', usernameCheckError);
+      }
+
+      if (usernameOwner) {
+        toast({
+          title: "Name already taken",
+          description: "Please choose a different name.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       if (existingProfile) {
         const { error } = await supabase
